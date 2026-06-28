@@ -107,7 +107,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 // CONFIG  —  paste your NEW pilot Google Apps Script Web App URL here
 // ═══════════════════════════════════════════════════════════════════════════
 const CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwyKAtoMznLBjw5LwOk97q8LAVwGn1Owq4iXRXgLoiNwX7WkPD-0PLfWrXwMZqKDNWf/exec",   // ← paste pilot Web App URL here
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzfxtCmo94HDoxuhaLPJubGLQ9G91ReBZxoMEPKuEhoDZ3apY8Sf5CcexKZVzfOgw14/exec",   // ← paste pilot Web App URL here
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -252,13 +252,47 @@ function updateAllocTotal(round){
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DATA SAVING
+// ─────────────────────────────────────────────────────────────────────────
+// Uses fetch POST with mode:"no-cors" ONLY — no image beacon.
+// "no-cors" returns an opaque response so mis-configured deployments
+// never produce 401 console errors.
+// Failed sends are queued and retried automatically every 3 s.
 // ═══════════════════════════════════════════════════════════════════════════
+const _saveQueue=[];
+let   _saving=false;
+
 function saveData(payload){
-  if(!CONFIG.SCRIPT_URL)return;
-  const json=JSON.stringify(payload);
-  fetch(CONFIG.SCRIPT_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"data="+encodeURIComponent(json)}).catch(()=>{});
-  try{const img=new Image();img.src=CONFIG.SCRIPT_URL+"?data="+encodeURIComponent(json);}catch(e){}
-  console.log("Saving:",payload.block,"|",payload.pid);
+  if(!CONFIG.SCRIPT_URL){
+    console.log("[survey] No SCRIPT_URL — skipping block:",payload.block);
+    return;
+  }
+  _saveQueue.push(payload);
+  _flushQueue();
+}
+
+function _flushQueue(){
+  if(_saving||_saveQueue.length===0)return;
+  _saving=true;
+  const payload=_saveQueue[0];
+  const body="data="+encodeURIComponent(JSON.stringify(payload));
+  fetch(CONFIG.SCRIPT_URL,{
+    method:"POST",
+    mode:"no-cors",
+    cache:"no-cache",
+    headers:{"Content-Type":"application/x-www-form-urlencoded"},
+    body
+  })
+  .then(()=>{
+    console.log("[survey] Saved:",payload.block,"| pid:",payload.pid);
+    _saveQueue.shift();
+    _saving=false;
+    if(_saveQueue.length>0)_flushQueue();
+  })
+  .catch(err=>{
+    console.warn("[survey] Save failed, retrying in 3s:",err.message);
+    _saving=false;
+    setTimeout(_flushQueue,3000);
+  });
 }
 function saveBlock(block,data){
   saveData({pid:state.pid,email:state.email||"",timestamp:new Date().toISOString(),
