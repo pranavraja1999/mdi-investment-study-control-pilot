@@ -81,6 +81,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .ret-pos{color:var(--green)}.ret-neg{color:var(--red)}.ret-zero{color:var(--slate)}
 .return-summary{display:flex;justify-content:space-between;align-items:center;padding:9px 13px;border-radius:8px;background:var(--off);border:1.5px solid var(--light);font-size:14px;margin-top:6px}
 .return-total{font-size:18px;font-weight:700;font-family:var(--font-h)}
+.cover{min-height:100vh;background:linear-gradient(rgba(27,42,74,0.75), rgba(27,42,74,0.85)),url('bg.jpg') center/cover no-repeat;;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center;position:relative;}
 .cover{min-height:100vh;background:linear-gradient(rgba(27,42,74,0.82),rgba(27,42,74,0.92));display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center}
 .cover-logo{font-family:var(--font-h);font-size:12px;color:var(--amber);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:36px}
 .cover-title{font-family:var(--font-h);font-size:clamp(20px,3.5vw,30px);color:var(--white);line-height:1.3;margin-bottom:10px;max-width:520px}
@@ -107,7 +108,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 // CONFIG  —  paste your NEW pilot Google Apps Script Web App URL here
 // ═══════════════════════════════════════════════════════════════════════════
 const CONFIG = {
-  SCRIPT_URL: "",   // ← paste pilot Web App URL here
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyh0yPho81lOufPq7ChiY3QfnHCnkxRQBjUK9OSUDLTAWogucuDy9Yh-2oRKt0O7Lwt/exec",   // ← paste pilot Web App URL here
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -744,134 +745,209 @@ function renderPreLottery(){
 
 // ═══════════════════════════════════════════════════════════════════════════
 // RENDER — HOLT-LAURY (Choice Task 1)
+// Identical to main survey: 10 rows, payoffs ₹200/₹160 vs ₹350/₹10,
+// once-only switch from A→B enforced via hlManual tracking,
+// pay row drawn silently on completion.
 // ═══════════════════════════════════════════════════════════════════════════
 const HL_ROWS=[
-  {p:10,hh:200,hl:160,lh:385,ll:10},
-  {p:20,hh:200,hl:160,lh:385,ll:10},
-  {p:30,hh:200,hl:160,lh:385,ll:10},
-  {p:40,hh:200,hl:160,lh:385,ll:10},
-  {p:50,hh:200,hl:160,lh:385,ll:10},
-  {p:60,hh:200,hl:160,lh:385,ll:10},
-  {p:70,hh:200,hl:160,lh:385,ll:10},
-  {p:80,hh:200,hl:160,lh:385,ll:10},
-  {p:90,hh:200,hl:160,lh:385,ll:10},
-  {p:100,hh:200,hl:160,lh:385,ll:10},
+  {p:10},{p:20},{p:30},{p:40},{p:50},
+  {p:60},{p:70},{p:80},{p:90},{p:100},
 ];
+
 function renderHL(){
-  const rows=HL_ROWS.map((r,i)=>{
-    const p10=r.p/10;const q10=(100-r.p)/10;
-    const aLbl=`${p10}/10 chance of ₹${r.hh}, ${q10}/10 chance of ₹${r.hl}`;
-    const bLbl=`${p10}/10 chance of ₹${r.lh}, ${q10}/10 chance of ₹${r.ll}`;
-    const disA=state.hlSwitched;const disB=false;
-    return `<tr>
-      <td class="row-lbl">${i+1}</td>
-      <td><label style="cursor:${disA?"not-allowed":"pointer"}"><input type="radio" name="hl_${i}" value="A" ${disA?"disabled":""} onchange="hlChange(${i},'A')"> ${aLbl}</label></td>
-      <td><label style="cursor:pointer"><input type="radio" name="hl_${i}" value="B" onchange="hlChange(${i},'B')"> ${bLbl}</label></td>
-    </tr>`;
-  }).join("");
+  progress(52);
+  state.hlSwitched=false;
+  state.hlPayRow=null;
+  state.hlManual={};
+  const probs=["10%/90%","20%/80%","30%/70%","40%/60%","50%/50%","60%/40%","70%/30%","80%/20%","90%/10%","100%/0%"];
+  const aOpts=Array(9).fill("₹200 or ₹160").concat(["₹200 (certain)"]);
+  const bOpts=Array(9).fill("₹350 or ₹10").concat(["₹350 (certain)"]);
+  const rows=probs.map((p,i)=>`<tr>
+    <td class="row-lbl">${i+1}</td>
+    <td class="prob" style="color:var(--slate);font-size:12.5px">${p}</td>
+    <td><label style="cursor:pointer;display:flex;align-items:center;gap:8px;justify-content:center">
+      <input type="radio" name="hl_${i}" value="A" id="hl_${i}_A" onchange="hlChange(${i},'A')"> ${aOpts[i]}</label></td>
+    <td><label style="cursor:pointer;display:flex;align-items:center;gap:8px;justify-content:center">
+      <input type="radio" name="hl_${i}" value="B" id="hl_${i}_B" onchange="hlChange(${i},'B')"> ${bOpts[i]}</label></td>
+  </tr>`).join("");
   const isFirst=state.lotteryOrder==="HL_first";
   return `<div class="card">
     <div class="card-header"><span class="block-badge">${isFirst?"Choice Task 1":"Choice Task 2"}</span><h2 class="card-title">Choice Task 1</h2></div>
-    <div class="info-box">For each row, choose Option A or Option B. One row will be randomly selected and played for real earnings. You can switch from A to B, but not back.</div>
-    <div style="overflow-x:auto"><table class="task-table">
-      <thead><tr><th>Row</th><th>Option A</th><th>Option B</th></tr></thead>
+    <div class="info-box">
+      In each row, choose between Option A (safer) and Option B (riskier).<br>
+      • The Prob High/Low column shows the probability of receiving the high payoff or low payoff for that row.<br>
+      • The probability of receiving the high payoff increases as you move down the table.<br>
+      • Once you choose Option B, all subsequent rows will automatically be recorded as Option B.<br>
+      • One row will be randomly selected for payment.<br>
+      • The option you chose in the selected row will be played for real, and the outcome will affect your earnings.<br>
+      Please review each row carefully before making your choices.
+    </div>
+    <div class="warn-box" style="font-size:13px"><strong>Option A:</strong> High = ₹200, Low = ₹160 &nbsp;|&nbsp; <strong>Option B:</strong> High = ₹350, Low = ₹10</div>
+    <table class="task-table" style="margin-top:14px">
+      <thead><tr><th style="width:50px">Row</th><th>Prob High/Low</th><th>Option A (Safer)</th><th>Option B (Riskier)</th></tr></thead>
       <tbody>${rows}</tbody>
-    </table></div>
-    <div id="err-hl" class="error-box">Please make a choice for every row.</div>
+    </table>
+    <div id="err-hl" class="error-box">Please answer all 10 rows.</div>
+    <div id="hl-pay-row-box" style="display:none;margin-top:12px;padding:12px 16px;background:var(--amber-lt);border:1.5px solid var(--amber);border-radius:8px;font-size:13.5px;text-align:center">
+      <span style="color:var(--dark)">We will reveal your outcome from this lottery at the end of the survey.</span>
+    </div>
     ${navRow("submitHL()")}
   </div>`;
 }
-function hlChange(rowIdx,choice){
-  if(choice==="B"){
-    state.hlSwitched=true;
-    for(let i=0;i<rowIdx;i++){
-      const inp=document.querySelector(`input[name="hl_${i}"][value="B"]`);
-      if(inp){inp.checked=true;inp.dispatchEvent(new Event("change"));}
+
+function hlChange(row,choice){
+  if(!state.hlManual) state.hlManual={};
+  state.hlManual[row]=choice;
+  // Find the earliest row where participant manually chose B
+  let firstB=-1;
+  for(let i=0;i<10;i++){if(state.hlManual[i]==="B"){firstB=i;break;}}
+  // Propagate: rows after firstB are locked to B; rows before are free
+  for(let i=0;i<10;i++){
+    const aEl=document.getElementById(`hl_${i}_A`);
+    const bEl=document.getElementById(`hl_${i}_B`);
+    if(!aEl) continue;
+    if(firstB>=0 && i>firstB){
+      if(bEl){bEl.checked=true;bEl.disabled=false;bEl.closest("label").style.opacity="1";}
+      aEl.checked=false;aEl.disabled=true;aEl.closest("label").style.opacity="0.4";
+    } else {
+      aEl.disabled=false;aEl.closest("label").style.opacity="1";
+      if(bEl){bEl.disabled=false;bEl.closest("label").style.opacity="1";}
+      const m=state.hlManual[i];
+      aEl.checked=m==="A";if(bEl)bEl.checked=m==="B";
     }
-    for(let i=rowIdx;i<HL_ROWS.length;i++){
-      const a=document.querySelector(`input[name="hl_${i}"][value="A"]`);
-      if(a){a.disabled=true;a.closest("label").style.cursor="not-allowed";}
-    }
+  }
+  state.hlSwitched=firstB>=0;
+  checkHLComplete();
+}
+
+function checkHLComplete(){
+  let allDone=true;
+  for(let i=0;i<10;i++){if(!getChecked(`hl_${i}`)){allDone=false;break;}}
+  if(allDone){
+    if(!state.hlPayRow) state.hlPayRow=Math.floor(Math.random()*10)+1;
+    const box=document.getElementById("hl-pay-row-box");
+    if(box) box.style.display="block";
   }
 }
+
 function submitHL(){
-  const responses=[];let switchRow=null;let ok=true;
-  for(let i=0;i<HL_ROWS.length;i++){
-    const v=getChecked(`hl_${i}`);if(!v){ok=false;break;}
-    responses.push(v);if(v==="B"&&switchRow===null)switchRow=i+1;
+  const vals=[];
+  for(let i=0;i<10;i++){
+    const v=getChecked(`hl_${i}`);
+    if(!v){document.getElementById("err-hl").style.display="block";return;}
+    vals.push(v);
   }
-  if(!ok){document.getElementById("err-hl").style.display="block";return;}
-  const payRow=Math.ceil(Math.random()*HL_ROWS.length);
-  const r=HL_ROWS[payRow-1];const choice=responses[payRow-1];
-  const isHigh=Math.random()<r.p/100;
-  const payout=choice==="A"?(isHigh?r.hh/100:r.hl/100):(isHigh?r.lh/100:r.ll/100);
-  state.hlResult={responses:responses.join(","),switchRow,payRow,choice,isHigh,payout};
-  state.hlPayRow=payRow;
-  saveBlock("B5_HoltLaury",{hl_responses:responses.join(","),hl_switch:switchRow,hl_pay_row:payRow,hl_choice:choice,hl_high:isHigh,hl_payout:payout});
-  if(state.lotteryOrder==="HL_first")goSection("lottery_b");
+  document.getElementById("err-hl").style.display="none";
+  const sw=vals.findIndex((v,i)=>v==="B"&&(i===0||vals[i-1]==="A"))+1||10;
+  const hlRow=(state.hlPayRow||Math.floor(Math.random()*10)+1)-1;
+  const hlProb=(hlRow+1)/10;
+  const hlHigh=Math.random()<hlProb;
+  const hlChoice=vals[hlRow];
+  const hlPayout=hlChoice==="A"?(hlHigh?200:160):(hlHigh?350:10);
+  state.hlResult={row:hlRow+1,choice:hlChoice,high:hlHigh,payout:hlPayout};
+  const d={hl_responses:vals.join(","),hl_switch:sw,hl_pay_row:hlRow+1,hl_choice:hlChoice,hl_high:hlHigh,hl_payout:hlPayout};
+  state.answers.hl=d;
+  saveBlock("B5_HoltLaury",d);
+  if(state.lotteryOrder==="HL_first") goSection("lottery_b");
   else goSection("preInvestment");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // RENDER — LOSS AVERSION (Choice Task 2)
+// Identical to main survey: 6 rows, win ₹200 vs lose ₹60/90/120/150/175/200,
+// once-only switch from Accept→Reject enforced via laManual tracking,
+// pay row drawn silently on completion.
 // ═══════════════════════════════════════════════════════════════════════════
-const LA_ROWS=[
-  {gain:10,loss:10},{gain:20,loss:10},{gain:30,loss:10},{gain:40,loss:10},{gain:50,loss:10},
-  {gain:60,loss:10},{gain:70,loss:10},{gain:80,loss:10},{gain:90,loss:10},{gain:100,loss:10},
-];
+const LA_LOSSES=[60,90,120,150,175,200];
+
 function renderLA(){
-  const rows=LA_ROWS.map((r,i)=>{
-    const acc=`50/50 chance: gain ₹${r.gain} or lose ₹${r.loss}`;
-    const rej=`Keep ₹0 (don't play)`;
-    const disA=state.laSwitched;
-    return `<tr>
-      <td class="row-lbl">${i+1}</td>
-      <td><label style="cursor:pointer"><input type="radio" name="la_${i}" value="Accept" onchange="laChange(${i},'Accept')"> ${acc}</label></td>
-      <td><label style="cursor:${disA?"not-allowed":"pointer"}"><input type="radio" name="la_${i}" value="Reject" ${disA?"disabled":""} onchange="laChange(${i},'Reject')"> ${rej}</label></td>
-    </tr>`;
-  }).join("");
+  progress(52);
+  state.laSwitched=false;
+  state.laPayRow=null;
+  state.laManual={};
+  const rows=LA_LOSSES.map((loss,i)=>`<tr>
+    <td class="row-lbl">${i+1}</td>
+    <td style="text-align:center;font-size:13px">Win ₹200 &nbsp;<strong>or</strong>&nbsp; Lose ₹${loss}</td>
+    <td><label style="cursor:pointer;display:flex;align-items:center;gap:8px;justify-content:center">
+      <input type="radio" name="la_${i}" value="accept" id="la_${i}_accept" onchange="laChange(${i},'accept')"> Accept</label></td>
+    <td><label style="cursor:pointer;display:flex;align-items:center;gap:8px;justify-content:center">
+      <input type="radio" name="la_${i}" value="reject" id="la_${i}_reject" onchange="laChange(${i},'reject')"> Reject</label></td>
+  </tr>`).join("");
   const isFirst=state.lotteryOrder==="LA_first";
   return `<div class="card">
     <div class="card-header"><span class="block-badge">${isFirst?"Choice Task 1":"Choice Task 2"}</span><h2 class="card-title">Choice Task 2</h2></div>
-    <div class="info-box">For each row, decide whether to Accept or Reject a 50/50 gamble. One row will be randomly selected and played for real earnings. Once you switch to Reject, all subsequent rows are also set to Reject.</div>
-    <div style="overflow-x:auto"><table class="task-table">
-      <thead><tr><th>Row</th><th>Accept (play the gamble)</th><th>Reject (keep ₹0)</th></tr></thead>
+    <div class="info-box">
+      In each row, you may Accept or Reject a lottery that offers a 50% chance of winning ₹200 and a 50% chance of losing the amount shown in that row.<br>
+      • Accept: a random coin flip determines whether you win or lose.<br>
+      • Reject: no gain and no loss.<br>
+      • Once you reject a lottery, all subsequent lotteries will automatically be rejected.<br>
+      After all decisions are made, one row will be randomly selected for payment. If you accepted the lottery in that row, a coin flip will determine your gain or loss. If you rejected it, your earnings will remain unchanged. Any gain or loss from this task will be added to your final earnings and paid accordingly.
+    </div>
+    <table class="task-table" style="margin-top:14px">
+      <thead><tr><th style="width:50px">Row</th><th>Gamble</th><th>Accept</th><th>Reject</th></tr></thead>
       <tbody>${rows}</tbody>
-    </table></div>
-    <div id="err-la" class="error-box">Please make a choice for every row.</div>
+    </table>
+    <div id="err-la" class="error-box">Please answer all 6 rows.</div>
+    <div id="la-pay-row-box" style="display:none;margin-top:12px;padding:12px 16px;background:var(--amber-lt);border:1.5px solid var(--amber);border-radius:8px;font-size:13.5px;text-align:center">
+      <span style="color:var(--dark)">We will reveal your outcome from this lottery at the end of the survey.</span>
+    </div>
     ${navRow("submitLA()")}
   </div>`;
 }
-function laChange(rowIdx,choice){
-  if(choice==="Reject"){
-    state.laSwitched=true;
-    for(let i=0;i<rowIdx;i++){
-      const inp=document.querySelector(`input[name="la_${i}"][value="Accept"]`);
-      if(inp){inp.checked=true;inp.dispatchEvent(new Event("change"));}
+
+function laChange(row,choice){
+  if(!state.laManual) state.laManual={};
+  state.laManual[row]=choice;
+  // Find the earliest row where participant manually rejected
+  let firstR=-1;
+  for(let i=0;i<6;i++){if(state.laManual[i]==="reject"){firstR=i;break;}}
+  // Propagate: rows after firstR are locked to Reject; rows before are free
+  for(let i=0;i<6;i++){
+    const aEl=document.getElementById(`la_${i}_accept`);
+    const rEl=document.getElementById(`la_${i}_reject`);
+    if(!aEl) continue;
+    if(firstR>=0 && i>firstR){
+      if(rEl){rEl.checked=true;rEl.disabled=false;rEl.closest("label").style.opacity="1";}
+      aEl.checked=false;aEl.disabled=true;aEl.closest("label").style.opacity="0.4";
+    } else {
+      aEl.disabled=false;aEl.closest("label").style.opacity="1";
+      if(rEl){rEl.disabled=false;rEl.closest("label").style.opacity="1";}
+      const m=state.laManual[i];
+      aEl.checked=m==="accept";if(rEl)rEl.checked=m==="reject";
     }
-    for(let i=rowIdx;i<LA_ROWS.length;i++){
-      const rej=document.querySelector(`input[name="la_${i}"][value="Reject"]`);
-      if(rej){rej.checked=true;rej.closest("label").style.cursor="not-allowed";}
-      const acc=document.querySelector(`input[name="la_${i}"][value="Accept"]`);
-      if(acc){acc.disabled=true;acc.closest("label").style.cursor="not-allowed";}
-    }
+  }
+  state.laSwitched=firstR>=0;
+  checkLAComplete();
+}
+
+function checkLAComplete(){
+  let allDone=true;
+  for(let i=0;i<6;i++){if(!getChecked(`la_${i}`)){allDone=false;break;}}
+  if(allDone){
+    if(!state.laPayRow) state.laPayRow=Math.floor(Math.random()*6)+1;
+    const box=document.getElementById("la-pay-row-box");
+    if(box) box.style.display="block";
   }
 }
+
 function submitLA(){
-  const responses=[];let switchRow=null;let ok=true;
-  for(let i=0;i<LA_ROWS.length;i++){
-    const v=getChecked(`la_${i}`);if(!v){ok=false;break;}
-    responses.push(v);if(v==="Reject"&&switchRow===null)switchRow=i+1;
+  const vals=[];
+  for(let i=0;i<6;i++){
+    const v=getChecked(`la_${i}`);
+    if(!v){document.getElementById("err-la").style.display="block";return;}
+    vals.push(v);
   }
-  if(!ok){document.getElementById("err-la").style.display="block";return;}
-  const payRow=Math.ceil(Math.random()*LA_ROWS.length);
-  const r=LA_ROWS[payRow-1];const choice=responses[payRow-1];
-  const win=Math.random()<0.5;
-  const payout=choice==="Accept"?(win?r.gain/100:-r.loss/100):0;
-  state.laResult={responses:responses.join(","),switchRow,payRow,choice,win,payout};
-  state.laPayRow=payRow;
-  saveBlock("B5b_LossAversion",{la_responses:responses.join(","),la_switch:switchRow,la_pay_row:payRow,la_choice:choice,la_payout:payout});
-  if(state.lotteryOrder==="LA_first")goSection("lottery_b");
+  document.getElementById("err-la").style.display="none";
+  const sw=vals.findIndex(v=>v==="reject")+1||7;
+  const laRow=(state.laPayRow||Math.floor(Math.random()*6)+1)-1;
+  const laChoice=vals[laRow];
+  let laPayout=0;let laHeads=false;
+  if(laChoice==="accept"){laHeads=Math.random()<0.5;laPayout=laHeads?200:-LA_LOSSES[laRow];}
+  state.laResult={row:laRow+1,choice:laChoice,heads:laHeads,payout:laPayout};
+  const d={la_responses:vals.join(","),la_switch:sw,la_pay_row:laRow+1,la_choice:laChoice,la_payout:laPayout};
+  state.answers.la=d;
+  saveBlock("B5b_LossAversion",d);
+  if(state.lotteryOrder==="LA_first") goSection("lottery_b");
   else goSection("preInvestment");
 }
 
