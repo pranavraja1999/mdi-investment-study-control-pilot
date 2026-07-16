@@ -455,7 +455,7 @@ function renderCover(){
   return `<div class="cover">
     <div class="cover-logo">Management Development Institute Gurgaon</div>
     <h1 class="cover-title">Investment Decision Study</h1>
-    <p class="cover-sub">A research study on financial decision-making. Your participation is voluntary and fully confidential. Maximum earnings: ₹1,500.</p>
+    <p class="cover-sub">A research study on financial decision-making. Your participation is voluntary and fully confidential. Maximum earnings: ₹1,400.</p>
     <div class="cover-meta">
       <div class="meta-item"><div class="meta-label">Duration</div><div class="meta-value">15 – 20 minutes</div></div>
       <div class="meta-item"><div class="meta-label">Researchers</div><div class="meta-value">Dr. Puneet Arora &amp; Dr. Divya Agarwal</div></div>
@@ -510,7 +510,7 @@ function renderParticipantInfo(){
     <div class="sec-label">Will there be any compensation?</div>
     <div class="info-box" style="font-size:13.5px;line-height:1.75">
       Each participant receives a fixed participation fee of Rs. 100 regardless of performance. Some individual tasks may have negative payoffs, but your total earnings will never be below the minimum guaranteed participation reward of Rs. 100.<br><br>
-      In addition, participants can earn an additional amount of up to Rs. 1,400, based on their decisions made during the survey.
+      In addition, participants can earn an additional amount of up to Rs. 1,300, based on their decisions made during the survey.
     </div>
     <div class="sec-label">Privacy &amp; Confidentiality</div>
     <div class="info-box" style="font-size:13.5px;line-height:1.75">
@@ -527,7 +527,7 @@ function renderParticipantInfo(){
     <div class="sec-label">Participation</div>
     <div class="info-box" style="font-size:13.5px;line-height:1.75">
       If you agree to participate, please share your consent on the Consent form.<br><br>
-      <em><strong>NOTE:</strong> This study has been approved by the Institutional Review Board (IRB) of Management Development Institute Gurgaon with IRB No. XXXX, and the researchers are authorized to collect data between [dd/mm/yy] – [dd/mm/yy].</em>
+      <em><strong>NOTE:</strong> This study has been approved by the Institutional Review Board (IRB) of Management Development Institute Gurgaon with IRB No. MDI IRB 2026-26, and the researchers are authorized to collect data between [dd/mm/yy] – [dd/mm/yy].</em>
     </div>
     ${navRow("goSection('consent')","Proceed to Consent Form →")}
   </div>`;
@@ -934,7 +934,7 @@ function renderHL(){
   </tr>`;}).join("");
   const isFirst=state.lotteryOrder==="HL_first";
   return `<div class="card">
-    <div class="card-header"><span class="block-badge">${isFirst?"Choice Task 1":"Choice Task 2"}</span><h2 class="card-title">Choice Task 1</h2></div>
+    <div class="card-header"><span class="block-badge">${isFirst?"Choice Task"}</span><h2 class="card-title">Choice Task</h2></div>
     <div class="info-box">
       In each row, choose between Option A (safer) and Option B (riskier).<br>
       • The probability of receiving the high payoff increases as you move down the table.<br>
@@ -1036,7 +1036,7 @@ function renderLA(){
   </tr>`).join("");
   const isFirst=state.lotteryOrder==="LA_first";
   return `<div class="card">
-    <div class="card-header"><span class="block-badge">${isFirst?"Choice Task 1":"Choice Task 2"}</span><h2 class="card-title">Choice Task 2</h2></div>
+    <div class="card-header"><span class="block-badge">${isFirst?"Choice Task"}</span><h2 class="card-title">Choice Task</h2></div>
     <div class="info-box">
       In each row, you may Accept or Reject a lottery that offers a 50% chance of winning ₹200 and a 50% chance of losing the amount shown in that row.<br>
       • Accept: a random coin flip determines whether you win or lose.<br>
@@ -1323,7 +1323,7 @@ function renderBlock11(){
         <tr style="background:var(--navy)"><td style="padding:12px 8px;color:var(--white);font-weight:700;font-family:var(--font-h)">Total payout</td><td style="padding:12px 8px;text-align:right;font-weight:700;font-size:18px;color:var(--amber)">${fmtINR(totalINR)}</td></tr>
       </tbody>
     </table>
-    <div class="info-box" style="margin-top:16px">Your payout of <strong>${fmtINR(totalINR)}</strong> will be processed electronically within one week. Thank you for your participation.</div>
+    <div class="info-box" style="margin-top:16px">For receiving your payout of <strong>${fmtINR(totalINR)}</strong> contact the researcher and share this screen. Thank you for your participation.</div>
     <div style="margin-top:20px;text-align:center;color:var(--slate);font-size:13px">Participant ID: <strong>${state.pid}</strong> &nbsp;|&nbsp; Contact: puneet.arora@mdi.ac.in</div>
   </div>`;
 }
